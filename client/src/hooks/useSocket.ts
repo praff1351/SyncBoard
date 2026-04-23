@@ -1,22 +1,19 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-const useSocket = () => {
-  const socketRef = useRef<Socket | null>(null);
+let globalSocket: Socket | null = null;
 
-  if (!socketRef.current) {
-    socketRef.current = io("http://localhost:5000", {
-      transports: ["websocket"],
+const useSocket = () => {
+  if (!globalSocket) {
+    globalSocket = io("http://localhost:5000", {
+      transports: ["polling", "websocket"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
   }
 
-  useEffect(() => {
-    return () => {
-      socketRef.current?.disconnect();
-    };
-  }, []);
-
-  return socketRef.current;
+  return globalSocket;
 };
 
 export default useSocket;

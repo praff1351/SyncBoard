@@ -24,7 +24,7 @@ const Register = () => {
 
   const registerMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post("/auth/register,{name, email, password}");
+      const res = await api.post("/auth/register",{name, email, password});
       return res.data;
     },
     onSuccess: (data) => {
