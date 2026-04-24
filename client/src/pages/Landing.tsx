@@ -5,7 +5,8 @@ import { ArrowRight, Users, Zap, History } from "lucide-react";
 
 const Landing = () => {
   const navigate = useNavigate();
-
+  const token = localStorage.getItem("token");
+  const isLoggedIn = !!token;
   return (
     <div
       className="flex flex-col items-center min-h-[90vh]
@@ -32,19 +33,13 @@ const Landing = () => {
           <Button
             size="lg"
             className="gap-2 px-8 bg-purple-600 hover:bg-purple-700 text-white"
-            onClick={() => navigate("/register")}
+            onClick={() => navigate(isLoggedIn ? "/dashboard" : "/register")}
           >
-            Start Drawing <ArrowRight size={16} />
+            {isLoggedIn ? "Start Drawing" : "Get started"}{" "}
+            <ArrowRight size={16} />
           </Button>
 
-          <Button
-            size="lg"
-            variant="outline"
-            className="px-8"
-            onClick={() => navigate("/login")}
-          >
-            Login
-          </Button>
+          
         </div>
       </div>
 

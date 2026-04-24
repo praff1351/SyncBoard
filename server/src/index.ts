@@ -19,6 +19,7 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"],
   },
 });
+const onlineUsers: Record<string, Set<string>> = {};
 
 const PORT = process.env.PORT || 5000;
 
@@ -37,33 +38,51 @@ io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
   // Join a room
-  socket.on("join-room", async (data: { roomId: string; token: string }) => {
-    try {
-      const decoded = jwt.verify(
-        data.token,
-        process.env.JWT_SECRET as string,
-      ) as { userId: string };
+  socket.on(
+    "join-room",
+    async (data: { roomId: string; token: string; userName: string }) => {
+      try {
+        const decoded = jwt.verify(
+          data.token,
+          process.env.JWT_SECRET as string,
+        ) as { userId: string };
 
-      socket.data.userId = decoded.userId;
-      socket.data.roomId = data.roomId;
+        socket.data.userId = decoded.userId;
+        socket.data.roomId = data.roomId;
+        socket.data.userName = data.userName;
 
-      socket.join(data.roomId);
-      console.log(`User ${decoded.userId} joined room ${data.roomId}`);
+        socket.join(data.roomId);
 
-      // Send existing strokes to the new user
-      const strokes = await pool.query(
-        `SELECT * FROM strokes WHERE room_id = $1 ORDER BY created_at ASC`,
-        [data.roomId],
-      );
-      socket.emit(
-        "load-strokes",
-        strokes.rows.map((s) => s.stroke_data),
-      );
-    } catch (err) {
-      console.error("Socket auth error:", err);
-      socket.disconnect();
-    }
-  });
+        //ADD TO ONLINE USERS:
+        if (!onlineUsers[data.roomId]) {
+          onlineUsers[data.roomId] = new Set();
+        }
+        onlineUsers[data.roomId].add(data.userName);
+
+        //BROADCAST UPDATED ONLINE USERS TO EVERYONE IN THE ROOM:
+
+        io.to(data.roomId).emit(
+          "online-users",
+          Array.from(onlineUsers[data.roomId]),
+        );
+
+        console.log(`User ${decoded.userId} joined room ${data.roomId}`);
+
+        // Send existing strokes to the new user
+        const strokes = await pool.query(
+          `SELECT * FROM strokes WHERE room_id = $1 ORDER BY created_at ASC`,
+          [data.roomId],
+        );
+        socket.emit(
+          "load-strokes",
+          strokes.rows.map((s) => s.stroke_data),
+        );
+      } catch (err) {
+        console.error("Socket auth error:", err);
+        socket.disconnect();
+      }
+    },
+  );
 
   // Receive a stroke and broadcast to others in the room
   socket.on("draw", async (strokeData: object) => {
@@ -99,6 +118,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    const { roomId, userName } = socket.data;
+    if (roomId && userName && onlineUsers[roomId]) {
+      onlineUsers[roomId].delete(userName);
+      io.to(roomId).emit("online-users", Array.from(onlineUsers[roomId]));
+    }
     console.log(`User disconnected: ${socket.id}`);
   });
 });

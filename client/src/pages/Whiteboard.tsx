@@ -31,6 +31,8 @@ const Whiteboard = () => {
   const [brushSize, setBrushSize] = useState(5);
   const [tool, setTool] = useState<"pen" | "eraser">("pen");
   const [copied, setCopied] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const { data: roomData } = useQuery({
     queryKey: ["room", roomId],
@@ -45,7 +47,7 @@ const Whiteboard = () => {
 
     const joinRoom = () => {
       console.log("Joining room:", roomId, "Socket ID:", socket.id);
-      socket.emit("join-room", { roomId, token });
+      socket.emit("join-room", { roomId, token, userName: user.name });
     };
 
     if (socket.connected) {
@@ -54,10 +56,15 @@ const Whiteboard = () => {
       socket.on("connect", joinRoom);
     }
 
-    socket.on("reconnect", ()=>{
+    socket.on("reconnect", () => {
       console.log("Reconnected! Rejoining room...");
       joinRoom();
-    })
+    });
+
+    socket.on("online-users", (users: string[]) => {
+      console.log("Online users:", users);
+      setOnlineUsers(users);
+    });
 
     socket.on("load-strokes", (strokes) => {
       console.log("Loaded strokes:", strokes);
@@ -65,6 +72,8 @@ const Whiteboard = () => {
 
     return () => {
       socket.off("connect", joinRoom);
+      socket.off("load-strokes");
+      socket.off("online-users");
       socket.off("load-strokes");
     };
   }, [roomId, token, socket]);
@@ -180,6 +189,20 @@ const Whiteboard = () => {
           <Trash2 size={16} />
         </Button>
 
+        {/*ONLINE USERS */}
+
+        <div className="ml-auto flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {onlineUsers.filter(Boolean).map((name) => (
+            <div className="flex items-center gap-1.5 bg-purple-100  dark:bg-purple-900/30 px-2 py-1 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                {name?.split(" ")[0]}
+              </span>
+            </div>
+          ))}
+        </div>
+
         {/*SHARE KEY*/}
         <div className="ml-auto flex items-center gap-2">
           <Badge
@@ -191,6 +214,7 @@ const Whiteboard = () => {
           <Button variant="ghost" size="icon" onClick={copyShareKey}>
             {copied ? <Check size={16} /> : <Copy size={16} />}
           </Button>
+        </div>
         </div>
       </div>
 

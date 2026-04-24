@@ -2,12 +2,26 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/context/ThemeContext";
 import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 
 
 const Navbar = ()=>{
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+
+
   const {isDark, toggleTheme} =  useTheme();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+
+  useEffect(()=>{
+    const checkAuth = ()=>{
+      setIsLoggedIn(!!localStorage.getItem("token"));
+    }
+
+    window.addEventListener("storage", checkAuth);
+    return()=> window.removeEventListener("storage", checkAuth);
+
+  }, []);
 
   const handleLogout =()=>{
     localStorage.removeItem("token");
@@ -26,7 +40,7 @@ const Navbar = ()=>{
           {isDark ? <Sun size={18}/> : <Moon size={18}/>}
         </Button>
 
-        {token ? (
+        {isLoggedIn ? (
         <>
         <Button variant="ghost" onClick={()=> navigate('/dashboard')}>
           Dashboard
