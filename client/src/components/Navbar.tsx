@@ -11,7 +11,6 @@ const Navbar = ()=>{
 
   const {isDark, toggleTheme} =  useTheme();
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   useEffect(()=>{
     const checkAuth = ()=>{
