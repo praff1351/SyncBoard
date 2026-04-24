@@ -4,11 +4,11 @@ import { Pool } from "pg";
 dotenv.config();
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "whiteboard",
-  password: process.env.DB_PASSWORD,
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
 });
 
 pool

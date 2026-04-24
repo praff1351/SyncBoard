@@ -15,7 +15,8 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://syncboard-1-2su1.onrender.com"],
+    credentials: true,
     methods: ["GET", "POST"],
   },
 });

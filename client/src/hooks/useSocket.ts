@@ -4,7 +4,7 @@ let globalSocket: Socket | null = null;
 
 const useSocket = () => {
   if (!globalSocket) {
-    globalSocket = io("http://localhost:5000", {
+    globalSocket = io(import.meta.env.VITE_SOCKET_URL, {
       transports: ["polling", "websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
